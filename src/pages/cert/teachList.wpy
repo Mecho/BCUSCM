@@ -1,0 +1,126 @@
+<style type="less">
+.searchbar-result{
+    margin-top: 0;
+    font-size: 14px;
+}
+.searchbar-result .weui-cell__bd{
+  padding: 2px 0 2px 20px;
+  color: var(--weui-FG-1);
+}
+.searchbar-result:before{
+    display: none;
+}
+</style>
+
+<template>
+	<view class="page">
+
+		<view class="page__hd">
+			<view class="page__title"></view>
+			<view class="page__desc"></view>
+		</view>
+
+		<view class="weui-panel weui-panel_access" wx:if="{{ type == 1 }}">
+			<view class="weui-panel__bd" v-for="list in lists" :key="list.id">
+				<navigator class="weui-media-box weui-media-box_appmsg" url="/pages/cert/examine?id={{ list.id }}&type={{ type }}">
+					<view class="weui-media-box__bd">
+						<h6 class="weui-media-box__title">证书ID：{{ list.id }}</h6>
+						<h6 class="weui-media-box__title">申请人姓名：{{ list.username }}</h6>
+						<h6 class="weui-media-box__title">证书名称：{{ list.cname }}</h6>
+						<h6 class="weui-media-box__title">提交时间：{{ list.create_time }}</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.sh_time }}">审核时间：{{ list.sh_time }}</h6>
+
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 0 }}">状态：	待审核</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 1 }}">状态：	审核通过</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 2 }}">状态：	未通过</h6>
+						
+						<view class="weui-media-box__desc"></view>
+					</view>
+				</navigator>
+			</view>
+		</view>
+
+		<view class="weui-panel weui-panel_access" wx:if="{{ type == 2 }}">
+			<view class="weui-panel__bd" v-for="list in lists" :key="list.id">
+				<navigator class="weui-media-box weui-media-box_appmsg" url="/pages/cert/examine?id={{ list.id }}&type={{ type }}">
+					<view class="weui-media-box__bd">
+						<h6 class="weui-media-box__title">竞赛ID：{{ list.id }}</h6>
+						<h6 class="weui-media-box__title">申请人姓名：{{ list.username }}</h6>
+						<h6 class="weui-media-box__title">竞赛名称：{{ list.pname }}</h6>
+						<h6 class="weui-media-box__title">提交时间：{{ list.create_time }}</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.sh_time }}">审核时间：{{ list.sh_time }}</h6>
+
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 0 }}">状态：	待审核</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 1 }}">状态：	审核通过</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 2 }}">状态：	未通过</h6>
+						
+						<view class="weui-media-box__desc"></view>
+					</view>
+				</navigator>
+			</view>
+		</view>
+
+	</view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '证书/竞赛 列表',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { teachList} from '@/api/auth'
+
+wepy.page({
+    data: {
+        inputShowed: false,
+        inputVal: "",
+        lists: null,
+        type: null,		// 1 证书 2 竞赛
+    },
+    onLoad(options) {
+    	this.type = options.type
+    },
+    async onShow(){
+    	const token = wx.getStorageSync('token')
+    	
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	   	let params = {zsjs:this.type, token:token}
+	    let userResponse = await teachList(params)
+
+	    this.lists = userResponse.data.data
+
+    },
+    methods: {
+	   showInput: function () {
+	        this.setData({
+	            inputShowed: true
+	        });
+	    },
+	    hideInput: function () {
+	        this.setData({
+	            inputVal: "",
+	            inputShowed: false
+	        });
+	    },
+	    clearInput: function () {
+	        this.setData({
+	            inputVal: ""
+	        });
+	    },
+	    inputTyping: function (e) {
+	        this.setData({
+	            inputVal: e.detail.value
+	        });
+	    }
+   }
+});
+</script>

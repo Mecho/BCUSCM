@@ -1,0 +1,54 @@
+<style lang="less">
+@import (css) './assets/style/app.wxss';
+
+.page{
+  background-color: #FFFFFF;
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import eventHub from './common/eventHub';
+import vuex from '@wepy/x';
+import promisify  from '@wepy/use-promisify';
+
+wepy.use(vuex);
+wepy.use(promisify);
+
+wepy.app({
+
+  hooks: {},
+  globalData: {},
+  onLaunch() {},
+  methods: {}
+
+});
+</script>
+
+<config>
+{
+    pages: [
+      'pages/user/index',
+      'pages/user/info',
+      'pages/user/edit',
+      'pages/auth/login',
+      'pages/activity/enter',
+      'pages/activity/info',
+      'pages/activity/launch',
+      'pages/activity/state',
+      'pages/cert/enter',
+      'pages/cert/competition',
+      'pages/cert/enterList',
+      'pages/cert/competitionList',
+      'pages/cert/teachList',
+      'pages/cert/examine',
+      'pages/sign/signin',
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'black'
+    }
+}
+</config>

@@ -1,0 +1,269 @@
+
+<template>
+    <view class="page">
+
+        <view class="page__hd">
+            <view class="page__title">活动发起</view>
+        </view>
+
+        <view class="page__bd">
+            <div class="weui-toptips weui-toptips_warn fadeIn" v-if="errorMessage">{{ errorMessage }}</div>
+
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">活动名称</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入活动名称" v-model="form.aname"/>
+                    </view>
+                </view>
+
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">活动日期</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <picker mode="date" value="{{date}}" start="{{date}}" @change="dateChange">
+                            <view class="weui-input">{{date}}</view>
+                        </picker>
+                        <picker mode="time" value="{{time}}" end="{{time}}" @change="timeChange">
+                            <view class="weui-input">{{time}}</view>
+                        </picker>
+                    </view>
+                </view>
+
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">活动地点</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入活动地点" v-model="form.aplace"/>
+                    </view>
+                </view>
+
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">活动人数</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入活动人数" v-model="form.anumber"/>
+                    </view>
+                </view>
+
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__hd">
+                        <view class="weui-label">二课分值</view>
+                    </view>
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入二课分值" v-model="form.aebranch"/>
+                    </view>
+                </view>
+            
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell weui-cell_active">
+                        <view class="weui-cell__bd">
+                            <textarea class="weui-textarea" placeholder="请输入活动简介/内容" style="height: 3.3em" v-model="form.remark" />
+                            <view class="weui-textarea-counter">0/200</view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+            <view class="weui-cells">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">
+                        <view class="weui-uploader">
+                            <view class="weui-uploader__hd">
+                              <view class="weui-uploader__overview">
+                                  <view class="weui-uploader__title">图片上传</view>
+                                  <view class="weui-uploader__info">{{files.length}}/2</view>
+                              </view>
+                              <view class="weui-uploader__tips">
+                                上传提示
+                              </view>
+                            </view>
+                            <view class="weui-uploader__bd">
+                                <view class="weui-uploader__files" id="uploaderFiles">
+                                    <block wx:for="{{files}}" wx:key="*this">
+                                        <view class="weui-uploader__file" bindtap="previewImage" id="{{item}}">
+                                            <image class="weui-uploader__img" src="{{item}}" mode="aspectFill" />
+                                        </view>
+                                    </block>
+                                    <view class="weui-uploader__file">
+                                        <image class="weui-uploader__img" src="" mode="aspectFill" />
+                                    </view>
+                                </view>
+                                <view class="weui-uploader__input-box">
+                                    <view class="weui-uploader__input" @tap="chooseImage"></view>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+            <view class="weui-btn-area">
+                <button class="weui-btn" type="primary" @tap="submit">创建活动</button>
+            </view>
+
+        </view>
+    </view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '活动发起',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { activityAdd, upload } from '@/api/auth'
+import { formatTime, formatTimeTwo, getWeekByDate } from '@/utils/data'
+
+
+  wepy.page({
+    data: {
+
+        hasError: true,     // 错误提示开关
+        errorMessage: "",   // 错误提示信息
+
+        date: "2020-00-00", // 默认日期
+        time: "12:00",      // 默认时间
+
+        files: [],  // 上传文件
+        form: {},   // 表单数据
+    },
+    methods: {
+        dateChange(e) {     // 日期
+            this.date = e.$wx.detail.value
+        },
+
+        timeChange(e) {     // 时间
+            this.time = e.$wx.detail.value
+        },
+
+        async submit(){    // 提交
+
+            this.form.atime = this.date + " " + this.time
+
+            let tokens = this.getToken()
+            let token = tokens.token
+            let username = tokens.username
+
+            this.form.token = token
+            this.form.faqiren = username
+
+            // 验证
+            if(!this.form.aname || !this.form.aplace || !this.form.anumber || !this.form.aebranch || !this.form.aimg || !this.form.remark || !this.form.faqiren || !this.form.token){
+
+                wx.showModal({
+                  title: '提示',
+                  content: '请将信息填写完整！'
+                })
+                return
+            }
+
+            // 提交请求
+            try {
+
+                const submitResponse = await activityAdd(this.form)
+                if(submitResponse.data.code == 0) {
+                    wx.showModal({
+                      title: '提示',
+                      content: '创建活动成功!'
+                    })
+
+                }else{
+                    wx.showModal({
+                      title: '提示',
+                      content: '创建活动失败，请联系管理员或重试'
+                    })
+                }
+
+            }catch(err) {
+                console.log(err)
+            }
+
+        },
+
+        // 上传图片
+        async chooseImage() {
+
+            let image = await wepy.wx.chooseImage({
+                sizeType: ['original', 'compressed'],   // 可以指定是原图还是压缩图，默认二者都有
+                sourceType: ['album', 'camera'],        // 可以指定来源是相册还是相机，默认二者都有
+            })
+
+            // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片 this.files = this.files.concat(image.tempFilePaths)
+            this.files = image.tempFilePaths
+
+            try{
+
+                let imageResponse = await upload(image.tempFilePaths[0])
+                let responseData = JSON.parse(imageResponse.data)
+
+                if(responseData.code != 0){
+                    wx.showModal({
+                      title: '提示',
+                      content: '图片上传失败，请联系管理员或重新上传'
+                    })
+                    return
+                }
+
+                this.form.aimg = responseData.data
+
+
+            }catch(err) {}
+        },
+
+        previewImage: function(e){
+            wx.previewImage({
+                current: e.currentTarget.id, // 当前显示图片的http链接
+                urls: this.files            // 需要预览的图片http链接列表
+            })
+        },
+
+        // 获取token
+        getToken(){
+            const token = wx.getStorageSync('token')
+            const logintype = wx.getStorageSync('logintype')
+            const username =  wx.getStorageSync('username')
+
+            if( ! token ) {
+                wx.navigateTo({    
+                     url:"/pages/auth/login"
+                })
+                return
+            }
+
+            // 活动发起必须要教师 否则跳转主页
+            if( logintype != 2 ) {
+                wx.navigateTo({    
+                     url:"/pages/user/index"
+                })
+            }
+            return {token, logintype, username}
+        }
+    },
+    onShow(){
+        this.getToken()
+
+        var timestamp = Date.parse(new Date());
+        timestamp = timestamp / 1000;
+        //获取当前时间
+        var n = timestamp * 1000;
+        var date = new Date(n);
+        //年
+        var Y = date.getFullYear();
+        //月
+        var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1);
+        //日
+        var D = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
+
+        this.date = Y + "-" + M + "-" + D
+
+    }
+  })
+</script>

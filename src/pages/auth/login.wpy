@@ -1,0 +1,145 @@
+<style lang="less">
+.login-wrap {
+  margin-top: 90px;
+}
+.weui-toptips {
+    display: block;
+}
+</style>
+
+<template>
+  <div class="page">
+    <div class="page__bd">
+      <div class="page__bd login-wrap">
+        <div class="weui-toptips weui-toptips_warn fadeIn" v-if="errorMessage">{{ errorMessage }}</div>
+        <div class="weui-cells__title">用户登录</div>
+        <div class="weui-cells weui-cells_after-title">
+
+          <div class="weui-cell weui-cell_input" :class="{'weui-cell_warn': hasError}">
+            <div class="weui-cell__hd">
+              <div class="weui-label">账号</div>
+            </div>
+            <div class="weui-cell__bd">
+              <input class="weui-input" placeholder="输入账号" v-model="form.username" />
+            </div>
+            <div v-if="hasError" class="weui-cell__ft">
+              <icon type="warn" size="23" color="#E64340"></icon>
+            </div>
+          </div>
+
+          <div class="weui-cell weui-cell_input" :class="{'weui-cell_warn': hasError}">
+            <div class="weui-cell__hd">
+              <div class="weui-label">密码</div>
+            </div>
+            <div class="weui-cell__bd">
+              <input class="weui-input" placeholder="输入密码" v-model="form.password" type="password" />
+            </div>
+            <div v-if="hasError" class="weui-cell__ft">
+              <icon type="warn" size="23" color="#E64340"></icon>
+            </div>
+          </div>
+
+          <view class="weui-cell weui-cell_active weui-cell_select weui-cell_select-after">
+            <div class="weui-cell__hd">
+              <div class="weui-label">用户</div>
+            </div>
+
+            <view class="weui-cell__bd">
+              <picker bindchange="bindPickerChange" range="{{loginarr}}">
+                <view class="weui-select">{{ loginarr[value] }}</view>
+              </picker>
+            </view>
+
+          </view>
+
+        </div>
+
+        <div class="weui-btn-area">
+          <button class="weui-btn" type="primary" @tap="submit">登录</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '登录',
+  }
+</config>
+
+<script>
+  import wepy from '@wepy/core'
+  import { login } from '@/api/auth'
+  
+  wepy.page({
+    data: {
+      loginarr: ['学生', '教师'],
+      value:0,          // 用户默认值
+      logintype: 1,
+      form: {},         // 用户名
+      hasError: false,  // 是否有错 
+      errorMessage: ''  // 错误信息
+    },
+    methods: {
+      bindPickerChange(e) {
+
+        this.value = e.$wx.detail.value
+
+        if(e.$wx.detail.value == 0) {
+          this.logintype = 1
+        }else if(e.$wx.detail.value == 1){
+          this.logintype = 2
+        }
+
+      },
+      async submit() {
+
+        // 初始化错误
+        this.hasError = false
+        this.errorMessage = ""
+  
+        // 验证
+        if (!this.form.username || !this.form.password) {
+          this.hasError = true
+          this.errorMessage = '请填写账户名和密码'
+          return
+        }
+
+        let params = this.form
+        params.logintype = this.logintype
+
+        // 登陆请求
+        try{
+
+          const loginResponse = await login(params)
+
+          if(loginResponse.data.code == 1) {
+            this.hasError = true
+            this.errorMessage = loginResponse.data.msg
+          }
+
+          if(loginResponse.data.code == 0) {
+            const token = loginResponse.data.data.token
+            const id = loginResponse.data.data.id
+            const logintype = loginResponse.data.data.logintype
+            const username = loginResponse.data.data.username
+            const faqiren = loginResponse.data.data.faqiren
+
+            wx.setStorageSync('id', id)       
+            wx.setStorageSync('token', token)
+            wx.setStorageSync('logintype', logintype)
+            wx.setStorageSync('username', username)
+            wx.setStorageSync('faqiren', faqiren)
+
+            wx.navigateBack()
+          }
+          
+        }catch (err){
+          this.hasError = true
+          this.errorMessage = err.response.data.message
+        }
+      }
+    }
+  })
+</script>

@@ -1,0 +1,137 @@
+<style type="less">
+	.searchbar-result{
+	    margin-top: 0;
+	    font-size: 14px;
+	}
+	.searchbar-result .weui-cell__bd{
+	  padding: 2px 0 2px 20px;
+	  color: var(--weui-FG-1);
+	}
+	.searchbar-result:before{
+	    display: none;
+	}
+</style>
+
+<template>
+	<view class="page">
+		<view class="page__hd">
+			<view class="page__title"></view>
+			<view class="page__desc">活动列表</view>
+		</view>
+
+		<view class="page__bd">
+			<view class="weui-search-bar {{inputShowed ? 'weui-search-bar_focusing' : ''}}" id="searchBar">
+				<form class="weui-search-bar__form">
+					<view class="weui-search-bar__box">
+						<i class="weui-icon-search"></i>
+	                    <input type="text" class="weui-search-bar__input" placeholder="搜索" value="{{inputVal}}" @confirm="search" focus="{{inputShowed}}" @input="inputTyping" />
+	                    <span class="weui-icon-clear" wx:if="{{inputVal.length > 0}}" @tap="clearInput"></span>
+					</view>
+					<label class="weui-search-bar__label" @tap="showInput">
+						<i class="weui-icon-search"></i>
+	                    <span class="weui-search-bar__text">搜索</span>
+					</label>
+				</form>
+	            <view class="weui-search-bar__cancel-btn" @tap="search('sort')">排序</view>
+			</view>
+		</view>
+
+		<view class="weui-panel weui-panel_access">
+			<view class="weui-panel__bd" v-for="list in lists" :key="list.id">
+				<navigator class="weui-media-box weui-media-box_appmsg" url="/pages/activity/info?id={{ list.id }}&uname={{ uname }}&aname={{ list.aname }}">
+					<view class="weui-media-box__hd">
+						<image class="weui-media-box__thumb" src="{{ list.aimg }}" alt></image>
+					</view>
+					<view class="weui-media-box__bd">
+						<h4 class="weui-media-box__title">{{ list.aname }}</h4>
+						<view class="weui-media-box__desc"></view>
+					</view>
+				</navigator>
+			</view>
+		</view>
+	</view>
+</template>
+
+<config>
+{
+	navigationBarTitleText: '活动列表',
+}
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import {activityList} from '@/api/auth'
+
+wepy.page({
+    data: {
+        inputShowed: true,	// 排序功能控制显示
+        inputVal: "",		// 搜素内容
+        lists: null,		// 列表内容
+        uname: "",			// 活动名称
+        sort: 0,			// 排序 0升序 1降序 默认0		
+    },
+    async onShow(){
+    	const token = wx.getStorageSync('token')
+    	this.uname = wx.getStorageSync('username')
+
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	    let params = {id:"", aname:"", sort:""}
+	    const userResponse = await activityList(params)
+	    this.lists = userResponse.data.data
+
+    },
+    methods: {
+
+    	// 搜索 排序
+    	search(e) {
+
+    		var params = {id:"", aname:"", sort:this.sort}
+    		const isint = new RegExp("[0-9]+")
+
+    		if(isint.test(this.inputVal)) {
+    			params.id = this.inputVal
+    		}else{
+    			params.aname = this.inputVal
+    		}
+
+    		if(e == 'sort') {
+    			if(this.sort == 0) {
+    				params.sort = 1
+    				this.sort = 1
+    			}else{
+    				params.sort = 0
+    				this.sort = 0
+    			}
+    		}
+
+    		this.list(params)
+    	},
+
+    	// 活动列表
+    	async list(params) {
+    		const userResponse = await activityList(params)
+	    	this.lists = userResponse.data.data
+    	},
+
+	   	showInput() {
+	        this.inputShowed = true
+	    },
+	    hideInput() {
+            this.inputVal = ""
+            inputShowed= false
+	    },
+	    clearInput() {
+	        this.inputVal = ""
+	    },
+	    inputTyping(e) {
+	        this.inputVal = e.$wx.detail.value
+	    }
+   }
+});
+</script>

@@ -1,0 +1,207 @@
+
+<template>
+    <view class="page">
+
+        <view class="page__hd">
+            <view class="page__title">竞赛提交</view>
+        </view>
+
+        <view class="page__bd">
+            <div class="weui-toptips weui-toptips_warn fadeIn" v-if="errorMessage">{{ errorMessage }}</div>
+
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_active">
+
+                    <view class="weui-cell__bd">
+                        <input class="weui-input" placeholder="请输入证书/竞赛 名称" v-model="form.pname"/>
+                    </view>
+                </view>
+
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell weui-cell_active">
+                        <view class="weui-cell__bd">
+                            <textarea class="weui-textarea" placeholder="请输入证书/竞赛 说明" style="height: 3.3em" v-model="form.premark" />
+                            <view class="weui-textarea-counter">0/200</view>
+                        </view>
+                    </view>
+                </view>
+
+            </view>
+
+            <view class="weui-cells">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">
+                        <view class="weui-uploader">
+                            <view class="weui-uploader__hd">
+                              <view class="weui-uploader__overview">
+                                  <view class="weui-uploader__title">图片上传</view>
+                                  <view class="weui-uploader__info">{{files.length}}/1</view>
+                              </view>
+                              <view class="weui-uploader__tips">
+                                上传提示
+                              </view>
+                            </view>
+                            <view class="weui-uploader__bd">
+                                <view class="weui-uploader__files" id="uploaderFiles">
+                                    <block wx:for="{{files}}" wx:key="*this">
+                                        <view class="weui-uploader__file" bindtap="previewImage" id="{{item}}">
+                                            <image class="weui-uploader__img" src="{{item}}" mode="aspectFill" />
+                                        </view>
+                                    </block>
+                                    <view class="weui-uploader__file">
+                                        <image class="weui-uploader__img" src="" mode="aspectFill" />
+                                    </view>
+                                </view>
+                                <view class="weui-uploader__input-box">
+                                    <view class="weui-uploader__input" @tap="chooseImage"></view>
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+            <view class="weui-btn-area">
+                <button class="weui-btn" type="primary" @tap="submit">提交</button>
+                <button class="weui-btn" type="primary" @tap="competitionList">我的竞赛</button>
+            </view>
+
+        </view>
+    </view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '竞赛提交',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { competitionAdd, upload } from '@/api/auth'
+
+  wepy.page({
+    data: {
+        hasError: true,     // 错误提示开关
+        errorMessage: "",   // 错误提示信息
+
+        type:"",     // 竞赛或证数
+
+        files: [],  // 上传文件
+        form: {},   // 表单数据
+    },
+    methods: {
+        competitionList() {
+            wx.navigateTo({
+                url: "/pages/cert/competitionList"
+            })
+        },
+
+        async submit(){    // 提交
+
+            let tokens = this.getToken()
+
+            let token = tokens.token
+            let id = tokens.id
+
+            this.form.token = token
+            this.form.pid = id
+
+            // 验证
+            if(!this.form.token || !this.form.pid || !this.form.pname || !this.form.premark || !this.form.pimg){
+
+                wx.showModal({
+                  title: '提示',
+                  content: '请将信息填写完整！'
+                })
+                console.log(this.form)
+                return
+            }
+
+            // 提交请求
+            try {
+
+                // 证书
+                const submitResponse = await competitionAdd(this.form)
+
+                if(submitResponse.data.code == 0) {
+                    wx.showModal({
+                      title: '提示',
+                      content: '提交成功，请等待管理员审核！'
+                    })
+
+                }else{
+                    wx.showModal({
+                      title: '提示',
+                      content: '提交失败，请联系管理员或重试！'
+                    })
+                }
+
+            }catch(err) {}
+
+        },
+
+        // 上传图片
+        async chooseImage() {
+
+            let image = await wepy.wx.chooseImage({
+                sizeType: ['original', 'compressed'],   // 可以指定是原图还是压缩图，默认二者都有
+                sourceType: ['album', 'camera'],        // 可以指定来源是相册还是相机，默认二者都有
+            })
+
+            // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片 this.files = this.files.concat(image.tempFilePaths)
+            this.files = image.tempFilePaths
+
+            try{
+
+                let imageResponse = await upload(image.tempFilePaths[0])
+                let responseData = JSON.parse(imageResponse.data)
+
+                if(responseData.code != 0){
+                    wx.showModal({
+                      title: '提示',
+                      content: '图片上传失败，请联系管理员或重新上传'
+                    })
+                    return
+                }
+
+                this.form.pimg = responseData.data
+
+            }catch(err) {}
+        },
+
+        previewImage: function(e){
+            wx.previewImage({
+                current: e.currentTarget.id, // 当前显示图片的http链接
+                urls: this.files            // 需要预览的图片http链接列表
+            })
+        },
+
+        // 获取token
+        getToken(){
+            const token = wx.getStorageSync('token')
+            const logintype = wx.getStorageSync('logintype')
+            const username =  wx.getStorageSync('username')
+            const id =  wx.getStorageSync('id')
+
+            if( ! token ) {
+                wx.navigateTo({    
+                     url:"/pages/auth/login"
+                })
+                return
+            }
+
+            // 活动发起必须要教师 否则跳转主页
+            if( logintype != 1 ) {
+                wx.navigateTo({    
+                     url:"/pages/user/index"
+                })
+            }
+            return {token, logintype, username, id}
+        }
+    },
+    onShow(){
+        this.getToken()
+    }
+  })
+</script>

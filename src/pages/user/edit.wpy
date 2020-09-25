@@ -1,0 +1,254 @@
+
+<style type="less">
+.page{
+    height: 100%;
+}
+.weui-label {
+    width: 4.1em;
+}
+
+</style>
+
+<template>
+	<view class="page">
+		<view class="weui-form">
+			<view class="weui-form__text-area">
+				<h2 class="weui-form__title">修改个人信息</h2>
+			</view>
+			<view class="weui-form__control-area">
+				<view class="weui-cells__group weui-cells__group_form">
+					<view class="weui-cells__title"></view>
+
+					<view class="weui-cells weui-cells_form">
+
+						<view wx:if="{{ logintype == 1 }}">
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">姓名: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.username }}(不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+							
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">学号: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.number }}(不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">班级: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.class }}不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">学部: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.ministry }}(不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+						</view>
+
+						<view wx:if="{{ logintype == 2 }}">
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">姓名: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.username }}(不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+							
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">工号: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.number }}(不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+
+							<view class="weui-cell weui-cell_active">
+								<view class="weui-cell__hd"><label class="weui-label">学部: </label></view>
+								<view class="weui-cell__bd">
+									<input class="weui-input" placeholder="{{ info.ministry }}不可更改)" placeholder-class="weui-input__placeholder" disabled="disabled"/>
+								</view>
+							</view>
+						</view>
+
+						<view class="weui-uploader">
+                            <view class="weui-uploader__hd">
+                              <view class="weui-uploader__overview">
+                                  <view class="weui-uploader__title"></view>
+                                  <view class="weui-uploader__info">{{files.length}}/1</view>
+                              </view>
+                              <view class="weui-uploader__tips">上传新头像</view>
+                            </view>
+                            <view class="weui-uploader__bd">
+                                <view class="weui-uploader__files" id="uploaderFiles">
+                                	<view class="weui-uploader__file">
+                                        <image class="weui-uploader__img" src="" mode="aspectFill"/>
+                                    </view>
+                                    <block wx:for="{{files}}" wx:key="*this">
+                                        <view class="weui-uploader__file" bindtap="previewImage" id="{{item}}">
+                                            <image class="weui-uploader__img" src="{{item}}" mode="aspectFill" />
+                                        </view>
+                                    </block>
+                                </view>
+
+                                <view class="weui-uploader__input-box">
+                                    <view class="weui-uploader__input" @tap="chooseImage"></view>
+                                </view>
+                            </view>
+                        </view>
+
+						<view class="weui-cells weui-cells_form">
+							<view class="weui-cell ">
+								<view class="weui-cell__bd">
+
+									<textarea class="weui-textarea" placeholder="个人简介" rows="3" v-model="info.remark"></textarea>
+									
+									<view class="weui-textarea-counter"><text>0</text>/200</view>
+								</view>
+							</view>
+						</view>
+
+					</view>
+				</view>
+			</view>
+
+			<view class="weui-form__tips-area">
+				<view class="weui-form__tips">
+	                <!-- 提示，居中对齐 -->
+				</view>
+			</view>
+
+			<view class="weui-form__opr-area">
+				<a class="weui-btn weui-btn_primary" @tap="submit">确定</a>
+			</view>
+
+		</view>
+	</view>
+</template>
+
+<script>
+import wepy from '@wepy/core'
+import { studentInfo, teacherInfo, editStudent, upload, editTeach } from '@/api/auth.js'
+
+wepy.page({
+	data:{
+		logintype: null,
+		info:null,
+		files: [],  
+        form: {},   
+        logintype: null,
+	},
+	methods:{
+		// 提交表单
+		async submit() {
+
+			this.form.remark = this.info.remark
+
+            if(!this.form.token || !this.form.uid || !this.form.remark || !this.form.head_img){
+                wx.showModal({
+                  title: '提示',
+                  content: '请将信息填写完整！'
+                })
+                return
+            }
+
+            try {
+
+            	if( this.logintype == 1 )
+            	{
+            		var submitResponse = await editStudent(this.form)
+            	}
+
+
+            	if( this.logintype == 2 )
+            	{
+            		var submitResponse = await editTeach(this.form)
+            	}
+                
+
+                if(submitResponse.data.code == 0) {
+                    wx.showModal({
+                      title: '提示',
+                      content: '修改成功'
+                    })
+
+                }else{
+                    wx.showModal({
+                      title: '提示',
+                      content: '提交失败，请联系管理员或重试！'
+                    })
+                }
+
+            }catch(err) {}
+		},
+
+		// 上传图片
+        async chooseImage() {
+
+            let image = await wepy.wx.chooseImage({
+                sizeType: ['original', 'compressed'],   // 可以指定是原图还是压缩图，默认二者都有
+                sourceType: ['album', 'camera'],        // 可以指定来源是相册还是相机，默认二者都有
+            })
+
+            // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片 this.files = this.files.concat(image.tempFilePaths)
+            this.files = image.tempFilePaths
+
+            try{
+
+                let imageResponse = await upload(image.tempFilePaths[0])
+                let responseData = JSON.parse(imageResponse.data)
+
+                if(responseData.code != 0){
+                    wx.showModal({
+                      title: '提示',
+                      content: '图片上传失败，请联系管理员或重新上传'
+                    })
+                    return
+                }
+
+                this.form.head_img = responseData.data
+
+            }catch(err) {}
+        },
+
+        previewImage: function(e){
+            wx.previewImage({
+                current: e.currentTarget.id, // 当前显示图片的http链接
+                urls: this.files            // 需要预览的图片http链接列表
+            })
+        },
+	},
+	async onShow(){
+    	const token = wx.getStorageSync('token')
+   		const id = wx.getStorageSync('id')
+   		const logintype = wx.getStorageSync('logintype')
+
+   		this.form.token = token
+   		this.form.uid = id
+   		this.logintype = logintype
+
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	    const params = {uid:id, token:token}
+
+	    if( logintype == 1 ){
+	    	var infoResponse = await studentInfo(params)
+	    }
+
+	    if( logintype == 2 ){
+	    	var infoResponse = await teacherInfo(params)
+	    }
+
+	    this.logintype = logintype
+	    this.info = infoResponse.data.data[0]
+    }
+})
+</script>

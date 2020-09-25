@@ -1,0 +1,204 @@
+<template>
+	<view class="page">
+		<view class="page__hd">
+			<view class="page__title">公告</view>
+			<view class="page__desc">公告内容</view>
+		</view>
+
+		<view class="weui-grids" wx:if="{{logintype == 2}}">
+
+			<navigator class="weui-grid" url="/pages/activity/launch">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/8.png" alt></image>
+				</view>
+				<view class="weui-grid__label">活动发起</view>
+			</navigator>
+
+			<navigator class="weui-grid" url="/pages/activity/state">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/9.png" alt></image>
+				</view>
+				<view class="weui-grid__label">活动状态</view>
+			</navigator>
+
+			<navigator class="weui-grid" url="/pages/user/info">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/6.png" alt></image>
+				</view>
+				<view class="weui-grid__label">个人信息</view>
+			</navigator>
+
+			<navigator class="weui-grid" url="/pages/cert/teachList?type=1">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/10.png" alt></image>
+				</view>
+				<view class="weui-grid__label">证书审核</view>
+			</navigator>
+			
+			<navigator class="weui-grid" url="/pages/cert/teachList?type=2">
+				<view class="weui-grid__icon">		
+					<image src="../../assets/images/11.png" alt></image>
+				</view>
+				<view class="weui-grid__label">竞赛审核</view>
+			</navigator>
+
+		</view>
+
+		<view class="weui-grids" wx:if="{{logintype == 1}}">
+
+			<navigator class="weui-grid" url="/pages/activity/enter">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/1.png" alt></image>
+				</view>
+				<view class="weui-grid__label">活动报名</view>
+			</navigator>
+			
+			<navigator class="weui-grid" url="/pages/activity/state">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/2.png" alt></image>
+				</view>
+				<view class="weui-grid__label">已报名活动状态</view>
+			</navigator>
+			
+			<a class="weui-grid" @tap="code">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/3.png" alt></image>
+				</view>
+				<view class="weui-grid__label">活动签到</view>
+			</a>
+			
+			<navigator class="weui-grid" url="/pages/cert/enter">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/4.png" alt></image>
+				</view>
+				<view class="weui-grid__label">证书认证</view>
+			</navigator>
+
+			<navigator class="weui-grid" url="/pages/cert/competition">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/5.png" alt></image>
+				</view>
+				<view class="weui-grid__label">竞赛认证</view>
+			</navigator>
+			
+			<navigator class="weui-grid" url="/pages/user/info">
+				<view class="weui-grid__icon">
+					<image src="../../assets/images/6.png" alt></image>
+				</view>
+				<view class="weui-grid__label">个人信息</view>
+			</navigator>
+
+		</view>
+
+	</view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '主页',
+  }
+</config>
+
+<script>
+
+import wepy from '@wepy/core'
+import {studentInfo, teacherInfo, signIn} from '@/api/auth'
+
+  wepy.page({
+    data: {
+    	user: {},
+    	logintype: 0,
+    	token: null,
+    	username: null,
+    },
+    methods: {
+    	// 扫码签到
+	    async code() {
+
+	    	// 允许从相机和相册扫码
+	    	try{
+	    		var scan = await wx.scanCode()
+	    	} catch(err) {
+	    		wx.showModal({
+				  title: '提示',
+				  content: '未识别签到二维码!'
+				})
+				return
+	    	}
+
+	    	let params = {token:this.token, aname:scan.result, uname:this.username}
+	    	let signResponse = await signIn(params)
+
+	    	if(signResponse.data.code == 6){
+	    		wx.showModal({
+				  title: '提示',
+				  content: '签到失败!请先报名活动!'
+				})
+	    	}if(signResponse.data.code == 1){
+	    		wx.showModal({
+				  title: '提示',
+				  content: '您已签到!请勿重复签到!'
+				})
+	    	}else{
+	    		wx.showModal({
+				  title: '提示',
+				  content: '签到成功！'
+				})
+	    	}
+			
+	    },
+    },
+    async onShow() {
+	    var token = wx.getStorageSync('token')
+
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	    // 获取个人信息
+	    var id = wx.getStorageSync('id')
+	    var logintype = wx.getStorageSync('logintype')
+	    var username = wx.getStorageSync('username')
+
+	    // 设置用户
+	    this.logintype = logintype
+	    this.token = token
+	    this.username = username
+
+	    try {
+
+		    // 学生
+		    if(logintype == 1) {
+		    	let params = {uid:id, token:token}
+		    	var userResponse = await studentInfo(params)
+		    }
+
+		    // 教师
+		    if(logintype == 2) {
+		    	let params = {uid:id, token:token}
+		    	var userResponse = await teacherInfo(params)
+		    }
+
+		    // 请求成功
+		    if(userResponse.data.code == 0) {
+		    	this.user = userResponse.data
+		    }
+
+		    // 请求失败
+		    if(userResponse.data.code == 1) {
+		    	wx.showModal({
+				  title: '提示',
+				  content: '请求太频繁，请稍后再试'
+				})
+		    }
+
+		}catch(err) {
+			console.log(err)
+		}
+
+  	}
+  })
+</script>

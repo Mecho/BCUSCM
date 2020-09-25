@@ -1,0 +1,104 @@
+<style type="less">
+.searchbar-result{
+    margin-top: 0;
+    font-size: 14px;
+}
+.searchbar-result .weui-cell__bd{
+  padding: 2px 0 2px 20px;
+  color: var(--weui-FG-1);
+}
+.searchbar-result:before{
+    display: none;
+}
+</style>
+
+<template>
+	<view class="page">
+
+		<view class="page__hd">
+			<view class="page__title"></view>
+			<view class="page__desc"></view>
+		</view>
+
+		<view class="weui-panel weui-panel_access">
+			<view class="weui-panel__bd" v-for="list in lists" :key="list.id">
+				<navigator class="weui-media-box weui-media-box_appmsg">
+					<view class="weui-media-box__bd">
+						<h6 class="weui-media-box__title">证书ID：{{ list.cid }}</h6>
+						<h6 class="weui-media-box__title">证书名称：{{ list.cname }}</h6>
+						<h6 class="weui-media-box__title">提交时间：{{ list.create_time }}</h6>
+
+						<h6 class="weui-media-box__title" wx:if="{{ list.sh_time }}">审核时间：{{ list.sh_time }}</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 0 }}">状态：	待审核</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 1 }}">状态：	审核通过</h6>
+						<h6 class="weui-media-box__title" wx:if="{{ list.status == 2 }}">状态：	未通过</h6>
+						
+						<h6 class="weui-media-box__title" wx:if="{{ list.cerbranch }}">二课分：{{ list.cerbranch }} 分</h6>
+
+						<view class="weui-media-box__desc"></view>
+					</view>
+				</navigator>
+			</view>
+		</view>
+
+	</view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '我的证书列表',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { certList} from '@/api/auth'
+
+wepy.page({
+    data: {
+        inputShowed: false,
+        inputVal: "",
+        lists: null,
+    },
+    async onShow(){
+    	const token = wx.getStorageSync('token')
+    	
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	    const uid = wx.getStorageSync('id')
+	   	const params = {uid:uid, token:token}
+
+	    const userResponse = await certList(params)
+	    this.lists = userResponse.data.data
+
+    },
+    methods: {
+	   showInput: function () {
+	        this.setData({
+	            inputShowed: true
+	        });
+	    },
+	    hideInput: function () {
+	        this.setData({
+	            inputVal: "",
+	            inputShowed: false
+	        });
+	    },
+	    clearInput: function () {
+	        this.setData({
+	            inputVal: ""
+	        });
+	    },
+	    inputTyping: function (e) {
+	        this.setData({
+	            inputVal: e.detail.value
+	        });
+	    }
+   }
+});
+</script>

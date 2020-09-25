@@ -1,0 +1,162 @@
+<style type="less">
+.page{
+    background-color: var(--weui-BG-2);
+}
+image{
+    margin: 4px 0;
+} 
+</style>
+
+<template>
+    <view class="page">
+        <view class="page__hd">
+            <view class="page__title">{{ info.aname }}</view>
+            <view class="page__desc">ID：{{ info.id }} 发起人(教师)：{{ info.faqiren }}</view>
+        </view>
+
+        <view class="page__bd">
+            <view class="weui-article">
+                <view class="weui-article__h1"></view>
+
+                <view class="weui-article__section">
+                    <view class="weui-article__h2"></view>
+                    <view class="weui-article__section">
+
+                        <view wx:if="{{ info.aimg }}">
+                            <view class="weui-article__p">
+                                <image class="weui-article__img" src="{{ info.aimg }}" mode="aspectFit" style="height: 150px;" />
+                            </view>
+                        </view>
+
+                        <view class="weui-article__h3">活动时间： {{ info.atime }}</view>
+                        <view class="weui-article__h3">活动地点： {{ info.aplace }}</view>
+                        <view class="weui-article__h3">二课分值： {{ info.aebranch }} (分)</view>
+                        <view class="weui-article__h3">活动人数： {{ info.anumber }} (人)</view>
+                        <view class="weui-article__h3"></view>
+
+                    </view>
+
+                    <view class="weui-article__section">
+                        <view class="weui-article__h3">活动简介</view>
+                        <view class="weui-article__p">
+                            {{ info.remark }}
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+            <div class="weui-btn-area" wx:if="{{ logintype == 1 }}">
+                <button class="weui-btn" type="primary" @tap="submit">{{ tfmbstr }}</button>
+            </div>
+
+            <navigator class="weui-btn-area" wx:if="{{ logintype == 2 }}" url="/pages/sign/signin?id={{ info.id }}">
+                <button class="weui-btn" type="primary">展示签到二维码</button>
+            </navigator>
+        </view>
+    </view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '活动详情',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { activityInfo, signUp, signDel } from '@/api/auth'
+
+wepy.page({
+    data: {
+        info: null,               //  信息
+        logintype: null,         //  用户
+        tfmbstr: "报名",         // 是否报名文字
+        aname: "",              //  会议名称
+        username: "",           //  学生账号
+        token: "",              //  token
+    },
+    computed: {},
+    methods: {
+    
+        // 报名/取消报名
+        async submit() {
+            try{
+                // 报名
+                if(this.info.tfbm == 0){
+
+                    var params = {aname:this.aname, username:this.username, token:this.token}
+                    var signResponse = await signUp(params)
+
+                    if(signResponse.data.code == 0) {
+                        this.tfmbstr = "取消报名"
+                        this.info.tfbm = 1
+                        wx.showModal({
+                            title: '提示',
+                            content: '报名成功!'
+                        })
+                    }
+
+                // 取消报名
+                } else if(this.info.tfbm == 1){
+                    var params = {aname:this.aname, uname:this.username, token:this.token}
+                    var signResponse = await signDel(params)
+
+                    this.tfmbstr = "报名"
+                    this.info.tfbm = 0
+                    
+                    wx.showModal({
+                        title: '提示',
+                        content: '已取消报名!'
+                    })
+                    
+
+                } else{
+                    wx.showModal({
+                      title: '提示',
+                      content: '报名/取消 失败，请检查网络环境！'
+                    })
+                }
+            }catch(err) {}
+        },
+
+
+        // 获取活动信息
+        async getActivityInfo(id, uname, aname) {
+
+            this.aname = aname
+            let params = {aid:id, logintype:this.logintype, uname:uname, aname:this.aname}
+
+            const infoResponse = await activityInfo(params)
+            this.info = infoResponse.data.data
+
+            if( this.logintype == 1 && this.info.tfbm == 0 )
+            {
+                this.tfmbstr = "报名"
+            }
+
+            if( this.logintype == 1 && this.info.tfbm == 1 )
+            {
+                this.tfmbstr = "取消报名"
+            }
+        }
+    },    
+    onLoad(options) {
+        this.logintype = wx.getStorageSync('logintype')
+        this.username = wx.getStorageSync('username')
+        this.token = wx.getStorageSync('token')
+        if(this.logintype == 2) {
+            options.uname = ""
+        }
+        this.getActivityInfo(options.id, options.uname, options.aname)
+    },
+    async onShow(){
+        const token = wx.getStorageSync('token')
+        if( ! token ) {
+            wx.navigateTo({    
+                 url:"/pages/auth/login"
+            })
+            return
+        }
+    },
+})
+</script>

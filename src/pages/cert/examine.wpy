@@ -1,0 +1,212 @@
+
+<template>
+    <view class="page">
+        <view class="page__hd">
+            <view class="page__title">证书/竞赛 审核</view>
+        </view>
+
+        <view class="page__bd">
+            <div class="weui-toptips weui-toptips_warn fadeIn" v-if="errorMessage">{{ errorMessage }}</div>
+            <view class="weui-cells weui-cells_after-title">
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__bd" wx:if="{{ type == 1 }}">
+                        <input class="weui-input" placeholder="证书/竞赛名称： {{ info.cname }}" disabled="disabled" />
+                    </view>
+                    <view class="weui-cell__bd" wx:if="{{ type == 2 }}">
+                        <input class="weui-input" placeholder="证书/竞赛名称： {{ info.pname }}" disabled="disabled" />
+                    </view>
+                </view>
+
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell weui-cell_active">
+                        <view class="weui-cell__bd" wx:if="{{ type == 1 }}">
+                            <textarea class="weui-textarea" placeholder="证书/竞赛说明：" style="height: 3.3em" v-model="info.cremark" disabled="disabled" />
+                            <view class="weui-textarea-counter">0/200</view>
+                        </view>
+
+                        <view class="weui-cell__bd" wx:if="{{ type == 2 }}">
+                            <textarea class="weui-textarea" placeholder="证书/竞赛说明：" style="height: 3.3em" v-model="info.premark" disabled="disabled" />
+                            <view class="weui-textarea-counter">0/200</view>
+                        </view>
+                    </view>
+                </view>
+
+                <view class="weui-cell weui-cell_active">
+                    <view class="weui-cell__bd"wx:if="{{ type == 1 }}">
+                        <input class="weui-input" placeholder="二课分值： (填写不带单位正整数)" type="number" v-model="form.cebranch"/>
+                    </view>
+                    <view class="weui-cell__bd"wx:if="{{ type == 2 }}">
+                        <input class="weui-input" placeholder="二课分值： (填写不带单位正整数)" type="number" v-model="form.pebranch"/>
+                    </view>
+                </view>
+
+                <view class="weui-cells weui-cells_after-title">
+                    <view class="weui-cell weui-cell_active">
+                        <view class="weui-cell__bd">
+                            <textarea class="weui-textarea" placeholder="审核意见：" style="height: 3.3em" v-model="form.sh_yijian" />
+                            <view class="weui-textarea-counter">0/200</view>
+                        </view>
+                    </view>
+                </view>
+            </view>
+
+            <view wx:if="{{ type == 1 }}">
+                <image src="{{ info.cimg }}" />
+            </view>
+
+            <view wx:if="{{ type == 2 }}">
+                <image src="{{ info.pimg }}" />
+            </view>
+
+            <view class="weui-btn-area" wx:if="{{ info.sh_status == 0 }}">
+                <button class="weui-btn" type="primary" @tap="submit(1)">通过</button>
+                <button class="weui-btn" type="primary" @tap="submit(2)">不通过</button>
+            </view>
+
+             <view class="weui-btn-area" wx:if="{{ info.sh_status == 1}}">
+                <button class="weui-btn" type="primary">已通过</button>
+            </view>
+
+            <view class="weui-btn-area" wx:if="{{ info.sh_status == 2 }}">
+                <button class="weui-btn" type="primary">未通过</button>
+            </view>
+
+
+        </view>
+    </view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '证书/竞赛 审核',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { cerAndActInfo, certExamine } from '@/api/auth'
+
+  wepy.page({
+    data: {
+        hasError: true,     // 错误提示开关
+        errorMessage: "",   // 错误提示信息
+        type: null,         // 证书或者竞赛类型 1证书 2竞赛
+        id: null,           // 证书/竞赛 ID
+        form: {
+            pebranch: "",
+            cebranch: "",
+        },           // 表单数据
+        info: null,         // 详情数据
+        token: null,        // 令牌
+    },
+    methods: {
+        // 加载数据
+        async loadData() {
+            const params = {token:this.token, zsjs:this.type, id:this.id}
+            const infoResponse = await cerAndActInfo(params)
+            this.info = infoResponse.data.data[0]
+            if(this.type == 1)
+            {
+                this.info.cremark = this.info.cremark
+            }
+            if(this.type == 2)
+            {
+                this.info.premark = this.info.premark
+            }
+            this.form.sh_yijian = this.info.sh_yijian
+        },
+
+        async submit(data){    // 提交
+
+            if(data == 1) {
+                this.form.sh_status = 1
+            }
+
+            if(data == 2) {
+                this.form.sh_status = 2
+            }
+
+            // 拼装数据
+            this.form.id = this.id
+            this.form.token = this.token               
+            this.form.zsjs = this.type
+
+            // 验证
+            if(!this.form.sh_yijian || !this.form.id || !this.form.token || !this.form.zsjs){
+
+                wx.showModal({
+                  title: '提示',
+                  content: '请将信息填写完整！'
+                })
+                return
+            }
+
+            // 提交请求
+            try {
+                const submitResponse = await certExamine(this.form)
+
+                if(submitResponse.data.code == 0) {
+                    if(data == 1)
+                    {
+                        wx.showModal({
+                          title: '提示',
+                          content: '已审核通过！'
+                        })
+
+                        this.info.sh_status = 1
+                    }
+                    if(data == 2)
+                    {
+                        wx.showModal({
+                          title: '提示',
+                          content: '已审核不通过！'
+                        })
+
+                        this.info.sh_status = 2
+                    }
+
+                }else{
+                    wx.showModal({
+                      title: '提示',
+                      content: '审核失败，请联系管理员或重试！'
+                    })
+                }
+            }catch(err) {}
+        },
+
+        // 获取token
+        getToken(){
+            const token = wx.getStorageSync('token')
+            const logintype = wx.getStorageSync('logintype')
+            const username =  wx.getStorageSync('username')
+            const id =  wx.getStorageSync('id')
+
+            if( ! token ) {
+                wx.navigateTo({    
+                     url:"/pages/auth/login"
+                })
+                return
+            }
+
+            // 审核必须要教师 否则跳转主页
+            if( logintype != 2 ) {
+                wx.navigateTo({    
+                     url:"/pages/user/index"
+                })
+            }
+            return {token, logintype, username, id}
+        }
+    },
+    onShow(){
+        this.getToken()
+    },
+    onLoad(options) {
+        this.type = options.type
+        this.id = options.id
+        this.token = wx.getStorageSync('token')
+
+        // 加载数据
+        this.loadData()
+    }
+  })
+</script>

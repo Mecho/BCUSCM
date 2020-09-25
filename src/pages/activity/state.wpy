@@ -1,0 +1,120 @@
+<style type="less">
+.weui-form-preview{
+    margin-bottom: 25px;
+}
+
+</style>
+
+<template>
+	<view class="page">
+		<view class="page__hd">
+			<view class="page__desc">活动状态</view>
+		</view>
+		<view class="page__bd" v-for="list in lists" :key="list.id">
+			
+			<view class="weui-form-preview">
+				<view class="weui-form-preview__bd">
+					<view class="weui-form-preview__item">
+						<label class="weui-form-preview__label">活动ID</label>
+						<text class="weui-form-preview__value">{{ list.id }}</text>
+					</view>
+
+					<view class="weui-form-preview__item">
+						<label class="weui-form-preview__label">活动名称</label>
+						<text class="weui-form-preview__value">{{ list.aname }}</text>
+					</view>
+
+					<view class="weui-form-preview__item">
+						<label class="weui-form-preview__label">签到时间</label>
+						<text class="weui-form-preview__value" wx:if="{{ logintype == 1 }}">{{ list.sqtime }}</text>
+						<text class="weui-form-preview__value" wx:if="{{ logintype == 2 }}">{{ list.atime }}</text>
+					</view>
+
+					<view class="weui-form-preview__item">
+						<label class="weui-form-preview__label">活动地点</label>
+						<text class="weui-form-preview__value">{{ list.aplace }}</text>
+					</view>
+
+					<view class="weui-form-preview__item">
+						<label class="weui-form-preview__label">活动的状态</label>
+
+						<text class="weui-form-preview__value" wx:if="{{ list.status == 0 }}">正在报名</text>
+						<text class="weui-form-preview__value" wx:if="{{ list.status == 1 }}">报名结束</text>
+						<text class="weui-form-preview__value" wx:if="{{ list.status == 2 }}">活动结束</text>
+
+					</view>
+
+					<view class="weui-form-preview__item" wx:if="{{ logintype == 1 }}">
+						<label class="weui-form-preview__label">签到状态</label>
+						<text class="weui-form-preview__value" wx:if="{{ list.sstautus == 0 }}">已签到</text>
+						<text class="weui-form-preview__value" wx:if="{{ list.sstautus == 1 }}">未签到</text>
+					</view>
+				</view>
+
+				<navigator class="weui-form-preview__ft" url="/pages/activity/info?id={{ list.id }}&uname={{ uname }}&aname={{ list.aname }}">
+					<a class="weui-form-preview__btn weui-form-preview__btn_primary">详情</a>
+				</navigator>
+
+			</view>
+			
+		</view>
+	</view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '活动状态',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { getActivityStateList } from '@/api/auth'
+
+wepy.page({
+	data: {
+		lists: null,
+		logintype: null,
+		uname: "",
+	},
+	methods: {
+		async getList(logintype) {
+			const username = wx.getStorageSync('username')
+			var params = {}
+
+			if(logintype == 1)
+			{
+				params = {logintype:logintype,uname:username}
+			}
+
+			if(logintype == 2)
+			{
+				params = {logintype:logintype,faqiren:username}
+			}
+
+			let listResponse = await getActivityStateList(params)
+			this.lists = listResponse.data.data
+		}
+	},
+	async onShow(){
+        const token = wx.getStorageSync('token')
+        const logintype = wx.getStorageSync('logintype')
+
+        if( ! token ) {
+            wx.navigateTo({    
+                 url:"/pages/auth/login"
+            })
+            return
+        }
+
+        // 设置用户
+        this.logintype = logintype
+        this.uname = wx.getStorageSync('username')
+
+
+        // 列表
+        this.getList(logintype)
+        
+    },
+})
+</script>

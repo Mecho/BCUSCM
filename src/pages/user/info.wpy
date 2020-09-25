@@ -1,0 +1,137 @@
+
+
+<template>
+	<view class="page">
+		<view class="page__hd">
+
+			<view class="header_left" wx:if="{{ logintype == 1 }}">
+				<view class="page__title">个人信息</view>
+				<view class="page__desc">姓名{{ info.username }}</view>
+				<view class="page__desc">学号：{{ info.number }}</view>
+				<view class="page__desc">班级：{{ info.class }}</view>
+				<view class="page__desc">学部: {{ info.ministry }}</view>
+				<view class="page__desc">二课分: {{ info.ebranch }}</view>
+			</view>
+
+			<view class="header_left" wx:if="{{ logintype == 2 }}">
+				<view class="page__title">个人信息</view>
+				<view class="page__desc">姓名：{{ info.tname }}</view>
+				<view class="page__desc">工号：{{ info.number }}</view>
+				<view class="page__desc">学部: {{ info.ministry }}</view>
+			</view>
+
+			<view class="header_right" style=" position: absolute;left: 50%;top: 10%;">
+				<image class="weui-media-box__thumb" src="{{ info.head_img }}" style="height:300rpx;width:300rpx;" alt></image>
+			</view>
+		</view>
+
+		<view class="page__bd">
+			<view class="weui-cells">
+				<view class="weui-cell weui-cell_active weui-cell_access">
+					<view class="weui-cell__bd">
+						<text style="vertical-align: middle;">
+							{{ info.remark }} 
+						</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="weui-grids" wx:if="{{ logintype == 1 }}">
+				<navigator class="weui-grid" url="/pages/activity/state">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/2.png" alt></image>
+					</view>
+					<view class="weui-grid__label">已报名活动</view>
+				</navigator>
+
+				<navigator class="weui-grid" url="/pages/cert/enter">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/4.png" alt></image>
+					</view>
+					<view class="weui-grid__label">证书</view>
+				</navigator>
+
+				<navigator class="weui-grid" url="/pages/cert/competition">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/5.png" alt></image>
+					</view>
+					<view class="weui-grid__label">竞赛</view>
+				</navigator>
+			</view>
+
+			<view class="weui-grids" wx:if="{{ logintype == 2 }}">
+				<navigator class="weui-grid" url="/pages/activity/state">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/9.png" alt></image>
+					</view>
+					<view class="weui-grid__label">活动状态</view>
+				</navigator>
+
+				<navigator class="weui-grid" url="/pages/cert/teachList?type=1">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/10.png" alt></image>
+					</view>
+					<view class="weui-grid__label">证书</view>
+				</navigator>
+
+				<navigator class="weui-grid" url="/pages/cert/teachList?type=2">
+					<view class="weui-grid__icon">
+						<image src="../../assets/images/11.png" alt></image>
+					</view>
+					<view class="weui-grid__label">竞赛</view>
+				</navigator>
+			</view>
+		</view>
+
+		<view class="weui-form__opr-area">
+			<navigator class="weui-btn weui-btn_primary" url="/pages/user/edit">修改</navigator>
+		</view>
+	</view>
+</template>
+
+<config>
+  {
+    navigationBarTitleText: '个人信息',
+  }
+</config>
+
+<script>
+import wepy from '@wepy/core'
+import { studentInfo, teacherInfo } from '@/api/auth.js'
+
+wepy.page({
+	data:{
+		info: null,
+		logintype: null
+	},
+
+	methods:{},
+
+	async onShow(){
+    	const token = wx.getStorageSync('token')
+   		const id = wx.getStorageSync('id')
+   		const logintype = wx.getStorageSync('logintype')
+
+	    if( ! token ) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
+		    return
+	    }
+
+	    const params = {uid:id, token:token}
+
+	    if( logintype == 1 ){
+	    	var infoResponse = await studentInfo(params)
+	    }
+
+	    if( logintype == 2 ){
+	    	var infoResponse = await teacherInfo(params)
+	    }
+
+	    this.logintype = logintype
+	    this.info = infoResponse.data.data[0]
+
+    }
+})
+</script>
