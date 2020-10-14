@@ -6,7 +6,7 @@
 
 			<view class="header_left" wx:if="{{ logintype == 1 }}">
 				<view class="page__title">个人信息</view>
-				<view class="page__desc">姓名{{ info.username }}</view>
+				<view class="page__desc">姓名：{{ info.sname }}</view>
 				<view class="page__desc">学号：{{ info.number }}</view>
 				<view class="page__desc">班级：{{ info.class }}</view>
 				<view class="page__desc">学部: {{ info.ministry }}</view>

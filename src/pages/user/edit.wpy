@@ -111,6 +111,13 @@
 							</view>
 						</view>
 
+						<view class="weui-cell weui-cell_active">
+							<view class="weui-cell__hd"><label class="weui-label">密码: </label></view>
+							<view class="weui-cell__bd">
+								<input class="weui-input" placeholder="可更改" placeholder-class="weui-input__placeholder" v-model="info.pw"/>
+							</view>
+						</view>
+
 					</view>
 				</view>
 			</view>
@@ -146,8 +153,9 @@ wepy.page({
 		async submit() {
 
 			this.form.remark = this.info.remark
+			this.form.pw = this.info.pw
 
-            if(!this.form.token || !this.form.uid || !this.form.remark || !this.form.head_img){
+            if(!this.form.token || !this.form.uid || !this.form.remark || !this.form.head_img|| !this.form.pw){
                 wx.showModal({
                   title: '提示',
                   content: '请将信息填写完整！'

@@ -150,7 +150,6 @@ import {studentInfo, teacherInfo, signIn} from '@/api/auth'
     },
     async onShow() {
 	    var token = wx.getStorageSync('token')
-
 	    if( ! token ) {
 		    wx.navigateTo({    
 		         url:"/pages/auth/login"
@@ -193,6 +192,12 @@ import {studentInfo, teacherInfo, signIn} from '@/api/auth'
 				  title: '提示',
 				  content: '请求太频繁，请稍后再试'
 				})
+		    }
+
+				if(userResponse.data.code == 3) {
+		    wx.navigateTo({    
+		         url:"/pages/auth/login"
+		    })
 		    }
 
 		}catch(err) {

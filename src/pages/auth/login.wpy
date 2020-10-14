@@ -121,17 +121,18 @@
 
           if(loginResponse.data.code == 0) {
             const token = loginResponse.data.data.token
+            wx.setStorageSync('token', token)
             const id = loginResponse.data.data.id
             const logintype = loginResponse.data.data.logintype
             const username = loginResponse.data.data.username
             const faqiren = loginResponse.data.data.faqiren
 
             wx.setStorageSync('id', id)       
-            wx.setStorageSync('token', token)
+            
             wx.setStorageSync('logintype', logintype)
             wx.setStorageSync('username', username)
             wx.setStorageSync('faqiren', faqiren)
-
+            
             wx.navigateBack()
           }
           
